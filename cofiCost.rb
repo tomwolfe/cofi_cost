@@ -24,6 +24,7 @@ class confiCost
 		
 		@ratingsMean = NArray.float(1, @numTracks).fill(0.0)
 		@ratingsNorm = NArray.float(@numUsers, @numTracks).fill(0.0)
+		@ratingsMean, @ratingsNorm = normalizeRatings
 		@lambda = lambda
 	end
 	
@@ -40,27 +41,29 @@ class confiCost
 		return @ratingsMean, @ratingsNorm
 	end
 	
+	def unrollParams(v)
+		theta = v.slice(0..@theta.size-1).reshape(@theta.dim[0],true)
+		features = v.slice(@theta.size..end).reshape(@features.dim[0],true)
+		return theta, features
+	end
+	
 	def minCost
 		cost_f = Proc.new { |v|
 			# parameter unrolling
-			ratingsNorm = @ratingsNorm.reshape(@ratingsNorm.dim[0],true) # y-values?
-			theta = v.slice(0..@theta.size-1) # .reshape(@theta.dim[0],true)
-			features = v.slice(@theta.size..end) # .reshape(@features.dim[0],true)
+			theta, features = unrollParams(v)
 			# In octave:
 			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + lambda/2 * sum(sum((Theta).^2)) + lambda/2 * sum(sum((X).^2))
-			1/2 * (((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - ratingsNorm) * @booleanRated)**2).sum + @lambda/2 * (features**2).sum
+			1/2 * (((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated)**2).sum + @lambda/2 * (features**2).sum
 		}
 
 		cost_df = Proc.new { |v, df|
 			# parameter unrolling
-			ratingsNorm = @ratingsNorm.reshape(@ratingsNorm.dim[0],true) # y-values?
-			theta = v.slice(0..@theta.size-1) # .reshape(@theta.dim[0],true)
-			features = v.slice(@theta.size..end) # .reshape(@features.dim[0],true)
+			theta, features = unrollParams(v)
 			# In octave:
 			# df[0] = ((X * Theta.transpose - Y).* R) * Theta + lambda * X # X_grad
 			# df[1] = ((X * Theta.transpose - Y).* R).transpose * X + lambda * Theta # Theta_grad
-			df[1] = ((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - ratingsNorm) * @booleanRated).transpose(1,0) * features + @lambda * theta
-			df[0] = NMatrix.ref((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - ratings) * @booleanRated) * NMatrix.ref(theta) + @lambda * features
+			df[1] = ((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated).transpose(1,0) * features + @lambda * theta
+			df[0] = NMatrix.ref((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated) * NMatrix.ref(theta) + @lambda * features
 		}
 
 		cost_func = Function_fdf.alloc(cost_f, cost_df, @ratingsNorm.size)
