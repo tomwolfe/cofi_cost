@@ -1,6 +1,7 @@
 require 'narray'
 require 'math'
 require 'gsl'
+require 'matrix'
 
 include GSL::MultiMin
 
@@ -43,8 +44,9 @@ class confiCost
 		cost_f = Proc.new { |v|
 			# parameter unrolling
 			ratingsNorm = @ratingsNorm.reshape(@ratingsNorm.dim[0],true) # y-values?
-			theta = v.slice(0..@theta.size-1).reshape(@theta.dim[0],true)
-			features = v.slice(@theta.size..@features.size-1).reshape(@features.dim[0],true)
+			theta = v.slice(0..@theta.size-1) # .reshape(@theta.dim[0],true)
+			features = v.slice(@theta.size..end) # .reshape(@features.dim[0],true)
+			# In octave:
 			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + lambda/2 * sum(sum((Theta).^2)) + lambda/2 * sum(sum((X).^2))
 			1/2 * (((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - ratingsNorm) * @booleanRated)**2).sum + @lambda/2 * (features**2).sum
 		}
@@ -54,6 +56,7 @@ class confiCost
 			ratingsNorm = @ratingsNorm.reshape(@ratingsNorm.dim[0],true) # y-values?
 			theta = v.slice(0..@theta.size-1) # .reshape(@theta.dim[0],true)
 			features = v.slice(@theta.size..end) # .reshape(@features.dim[0],true)
+			# In octave:
 			# df[0] = ((X * Theta.transpose - Y).* R) * Theta + lambda * X # X_grad
 			# df[1] = ((X * Theta.transpose - Y).* R).transpose * X + lambda * Theta # Theta_grad
 			df[1] = ((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - ratingsNorm) * @booleanRated).transpose(1,0) * features + @lambda * theta
@@ -62,10 +65,7 @@ class confiCost
 
 		cost_func = Function_fdf.alloc(cost_f, cost_df, @ratingsNorm.size)
 		# not needed?: cost_func.set_params(@ratingsNorm.reshape(true,1)) # parameters = y = @ratingsNorm?  .to_a ?
-
-		# x = Vector.alloc(5.0, 7.0)          # starting point
 		
-		# the following is a guess at how minimizer works:
 		# roll up theta and features together
 		x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1))) # starting point (X and theta? .to_a vector?)
 
