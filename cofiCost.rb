@@ -1,6 +1,6 @@
-require 'narray'
 require 'gsl'
 require 'matrix'
+require 'narray'
 
 include GSL::MultiMin
 
@@ -41,8 +41,9 @@ class ConfiCost
 	end
 	
 	def unrollParams(v)
-		theta = v.slice(0..@theta.size-1).reshape(@theta.dim[0],true)
-		features = v.slice(@theta.size..-1).reshape(@features.dim[0],true)
+		v = v.to_na
+		theta = v.slice(0..@theta.size-1).reshape(@theta.shape[0],true)
+		features = v.slice(@theta.size..-1).reshape(@features.shape[0],true)
 		return theta, features
 	end
 	
@@ -65,17 +66,21 @@ class ConfiCost
 			df[0] = NMatrix.ref((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated) * NMatrix.ref(theta) + @lambda * features
 		}
 
-		cost_func = Function_fdf.alloc(cost_f, cost_df, @ratingsNorm.size)
+		cost_func = Function_fdf.alloc(cost_f, cost_df, 22)
 		# not needed?: cost_func.set_params(@ratingsNorm.reshape(true,1)) # parameters = y = @ratingsNorm?  .to_a ?
 		
 		# roll up theta and features together
-		x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1))) # starting point
+		thetaReshaped = @theta.reshape(true,1)
+		featuresReshaped = @features.reshape(true,1)
+		rolled = NArray.hcat(thetaReshaped,featuresReshaped)
+		x = GSL:: Vector.alloc(rolled) # starting point
 
 		# TODO: figure out which algorithm to use
 		# http://www.gnu.org/software/gsl/manual/html_node/Multimin-Algorithms-with-Derivatives.html
-		minimizer = FdfMinimizer.alloc("conjugate_fr", @ratingsNorm.size)
+		minimizer = FdfMinimizer.alloc("conjugate_fr", 22)
 		minimizer.set(cost_func, x, 0.01, 1e-4)
-
+		#return x
+		
 		iter = 0
 		begin
 			iter += 1
@@ -93,7 +98,7 @@ class ConfiCost
 end
 
 class NArray
- 	 class << self
+	class << self
 		def cat(dim=0, *narrays)
 		      raise ArgumentError, "'dim' must be an integer" unless dim.is_a?(Integer)
 		      raise ArgumentError, "must have narrays to cat" if narrays.size == 0
