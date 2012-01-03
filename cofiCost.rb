@@ -1,14 +1,13 @@
 require 'narray'
-require 'math'
 require 'gsl'
 require 'matrix'
 
 include GSL::MultiMin
 
-class confiCost
+class ConfiCost
 
 	attr_accessor :ratings, :trackList, :numFeatures, :cost, :lambda # trackList: activerecord lookup of all track_ids
-	attr_reader :booleanRated, :numTracks, :numUsers, :features, :theta
+	attr_reader :booleanRated, :numTracks, :numUsers, :features, :theta, :ratingsMean, :ratingsNorm
 	
 	def initialize(ratings, trackList, numFeatures, lambda)
 		@ratings = ratings
@@ -19,7 +18,7 @@ class confiCost
 		@numTracks = @ratings.shape[1] # @ratings is users x tracks
 		@numUsers = @ratings.shape[0]
 		# set initial parameters
-		@features = NArray.float(@numFeatures, @numTracks).randomn # capitol X
+		@features = NArray.float(@numFeatures, @numTracks).randomn
 		@theta = NArray.float(@numFeatures, @numUsers).randomn
 		
 		@ratingsMean = NArray.float(1, @numTracks).fill(0.0)
@@ -43,7 +42,7 @@ class confiCost
 	
 	def unrollParams(v)
 		theta = v.slice(0..@theta.size-1).reshape(@theta.dim[0],true)
-		features = v.slice(@theta.size..end).reshape(@features.dim[0],true)
+		features = v.slice(@theta.size..-1).reshape(@features.dim[0],true)
 		return theta, features
 	end
 	
@@ -70,8 +69,10 @@ class confiCost
 		# not needed?: cost_func.set_params(@ratingsNorm.reshape(true,1)) # parameters = y = @ratingsNorm?  .to_a ?
 		
 		# roll up theta and features together
-		x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1))) # starting point (X and theta? .to_a vector?)
+		x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1))) # starting point
 
+		# TODO: figure out which algorithm to use
+		# http://www.gnu.org/software/gsl/manual/html_node/Multimin-Algorithms-with-Derivatives.html
 		minimizer = FdfMinimizer.alloc("conjugate_fr", @ratingsNorm.size)
 		minimizer.set(cost_func, x, 0.01, 1e-4)
 
