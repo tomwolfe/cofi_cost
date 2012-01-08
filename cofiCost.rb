@@ -28,7 +28,7 @@ class ConfiCost
 	end
 	
 	def normalizeRatings
-		for i in 0..@numTracks-1 # sadly, @numTracks.each won't work, -1 should be correct
+		for i in 0..@numTracks-1 # sadly, @numTracks.each_index does not work with NArray yet
 			trackRating = @ratings[true,i] # get all user ratings for track i (including unrated)
 			booleanTrackRating = booleanRated[true,i] # get all user ratings that exist for track i
 		    	@ratingsMean[i] = trackRating[booleanTrackRating].mean
@@ -47,39 +47,50 @@ class ConfiCost
 		return theta, features
 	end
 	
+	def partialCostCalc(theta,features)
+		(NArray.ref(NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0))) - @ratingsNorm) * @booleanRated
+	end
+	
 	def minCost
 		cost_f = Proc.new { |v|
-			# parameter unrolling
 			theta, features = unrollParams(v)
 			# In octave:
 			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + lambda/2 * sum(sum((Theta).^2)) + lambda/2 * sum(sum((X).^2))
-			1/2 * (((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated)**2).sum + @lambda/2 * (features**2).sum
+			(partialCostCalc(theta,features)**2).sum + @lambda/2 * (features**2).sum
 		}
-
 		cost_df = Proc.new { |v, df|
-			# parameter unrolling
 			theta, features = unrollParams(v)
 			# In octave:
-			# df[0] = ((X * Theta.transpose - Y).* R) * Theta + lambda * X # X_grad
-			# df[1] = ((X * Theta.transpose - Y).* R).transpose * X + lambda * Theta # Theta_grad
-			df[1] = ((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated).transpose(1,0) * features + @lambda * theta
-			df[0] = NMatrix.ref((NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0)) - @ratingsNorm) * @booleanRated) * NMatrix.ref(theta) + @lambda * features
+			# xgrad = ((X * Theta.transpose - Y).* R) * Theta + lambda * X # X_grad
+			# thetagrad = ((X * Theta.transpose - Y).* R).transpose * X + lambda * Theta
+			
+			# I realize this is a hack. I'm not totally sure why or how but just setting
+			# df = NArray.hcat(dfzero,dfone) results in no steps being made in gradient descent.
+			# ideas/suggestions welcome :)
+			dfzero = (NArray.ref(NMatrix.ref(partialCostCalc(theta,features)) * NMatrix.ref(theta)) + @lambda * features).flatten
+			dfone = (NArray.ref(NMatrix.ref((partialCostCalc(theta,features)).transpose(1,0)) * NMatrix.ref(features)) + @lambda * theta).flatten
+			dfcomp = NArray.hcat(dfzero,dfone)
+			for i in 0..dfcomp.size-1	# again .each_index does not yet work with NArray
+				df[i] = dfcomp[i]
+			end
 		}
-
-		cost_func = Function_fdf.alloc(cost_f, cost_df, 22)
-		# not needed?: cost_func.set_params(@ratingsNorm.reshape(true,1)) # parameters = y = @ratingsNorm?  .to_a ?
 		
 		# roll up theta and features together
-		thetaReshaped = @theta.reshape(true,1)
-		featuresReshaped = @features.reshape(true,1)
+		# (oddly, NArray objects created don't seem to recognize the hcat method
+		# 	added to the open class NArray
+		#	x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1)))
+		#		will fail)
+		#		I don't understand why this is/how to fix it.
+		thetaReshaped = @theta.reshape(true)
+		featuresReshaped = @features.reshape(true)
 		rolled = NArray.hcat(thetaReshaped,featuresReshaped)
 		x = GSL:: Vector.alloc(rolled) # starting point
+		cost_func = Function_fdf.alloc(cost_f, cost_df, x.size)
 
 		# TODO: figure out which algorithm to use
 		# http://www.gnu.org/software/gsl/manual/html_node/Multimin-Algorithms-with-Derivatives.html
-		minimizer = FdfMinimizer.alloc("conjugate_fr", 22)
+		minimizer = FdfMinimizer.alloc("conjugate_fr", x.size)
 		minimizer.set(cost_func, x, 0.01, 1e-4)
-		#return x
 		
 		iter = 0
 		begin
@@ -92,7 +103,8 @@ class ConfiCost
 			x = minimizer.x
 			f = minimizer.f
 			printf("%5d %.5f %.5f %10.5f\n", iter, x[0], x[1], f)
-		end while status == GSL::CONTINUE and iter < 100
+		end while status == GSL::CONTINUE and iter < 10
+		# return x
 	end
 
 end
@@ -121,3 +133,10 @@ class NArray
 		def hcat(*narrays) ; cat(0, *narrays) end
 	end
 end
+
+ratings = NArray.int(6,5).indgen(0,2)
+trackList = Array.new(ratings.shape[1])
+numFeatures = 2
+lambda = 1
+g = ConfiCost.new(ratings, trackList, numFeatures, lambda)
+g.minCost
