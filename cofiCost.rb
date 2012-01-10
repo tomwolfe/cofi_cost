@@ -10,7 +10,7 @@ class ConfiCost
 	attr_reader :booleanRated, :numTracks, :numUsers, :features, :theta, :ratingsMean, :ratingsNorm
 	
 	def initialize(ratings, trackList, numFeatures, lambda)
-		@ratings = ratings
+		@ratings = ratings.to_f	# make sure it's a float for correct normalization
 		@trackList = trackList
 		@numFeatures = numFeatures
 		@cost = 0
@@ -18,8 +18,10 @@ class ConfiCost
 		@numTracks = @ratings.shape[1] # @ratings is users x tracks
 		@numUsers = @ratings.shape[0]
 		# set initial parameters
-		@features = NArray.float(@numFeatures, @numTracks).randomn
-		@theta = NArray.float(@numFeatures, @numUsers).randomn
+		#@features = NArray.float(@numFeatures, @numTracks).randomn
+		#@theta = NArray.float(@numFeatures, @numUsers).randomn
+		@features = NArray[[0.139489,1.804804],[-0.501808,1.050885],[0.354079,-0.518884],[-0.015370,0.096253],[1.147623,-0.745562]]
+		@theta = NArray[[-0.079641,1.211386],[-0.130688,0.444762],[-0.789258,1.222232],[0.212132,-1.174545]]
 		
 		@ratingsMean = NArray.float(1, @numTracks).fill(0.0)
 		@ratingsNorm = NArray.float(@numUsers, @numTracks).fill(0.0)
@@ -51,6 +53,25 @@ class ConfiCost
 		(NArray.ref(NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0))) - @ratingsNorm) * @booleanRated
 	end
 	
+	def rollUpThetaFeatures
+		# roll up theta and features together
+		# (oddly, NArray objects created don't seem to recognize the hcat method
+		# 	added to the open class NArray
+		#	x = GSL:: Vector.alloc(@theta.reshape(true).hcat(@features.reshape(true)))
+		#		will fail)
+		#		I don't understand why this is/how to fix it.
+		thetaReshaped = @theta.reshape(true)
+		featuresReshaped = @features.reshape(true)
+		rolled = NArray.hcat(thetaReshaped,featuresReshaped)
+		GSL:: Vector.alloc(rolled) # starting point
+	end
+	
+	def unrollParamsInitShape(x)
+		theta, features = unrollParams(x)
+		@theta = theta.reshape(@theta.shape[0],true)
+		@features = features.reshape(@features.shape[0],true)
+	end
+	
 	def minCost
 		cost_f = Proc.new { |v|
 			theta, features = unrollParams(v)
@@ -75,16 +96,7 @@ class ConfiCost
 			end
 		}
 		
-		# roll up theta and features together
-		# (oddly, NArray objects created don't seem to recognize the hcat method
-		# 	added to the open class NArray
-		#	x = GSL:: Vector.alloc(@theta.reshape(true,1).hcat(@features.reshape(true,1)))
-		#		will fail)
-		#		I don't understand why this is/how to fix it.
-		thetaReshaped = @theta.reshape(true)
-		featuresReshaped = @features.reshape(true)
-		rolled = NArray.hcat(thetaReshaped,featuresReshaped)
-		x = GSL:: Vector.alloc(rolled) # starting point
+		x = rollUpThetaFeatures
 		cost_func = Function_fdf.alloc(cost_f, cost_df, x.size)
 
 		# TODO: figure out which algorithm to use
@@ -104,7 +116,12 @@ class ConfiCost
 			f = minimizer.f
 			printf("%5d %.5f %.5f %10.5f\n", iter, x[0], x[1], f)
 		end while status == GSL::CONTINUE and iter < 10
-		# return x
+		
+		unrollParamsInitShape(x)
+	end
+	
+	def predictions
+		NArray.ref(NMatrix.ref(@features) * NMatrix.ref(@theta.transpose(1,0))) + @ratingsMean
 	end
 
 end
@@ -134,9 +151,16 @@ class NArray
 	end
 end
 
-ratings = NArray.int(6,5).indgen(0,2)
+#ratings = NArray.float(4,5).indgen(0,2)
+ratings = NArray[[5.0,4.0,0.0,0.0],[3.0,0.0,0.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
 trackList = Array.new(ratings.shape[1])
 numFeatures = 2
 lambda = 1
 g = ConfiCost.new(ratings, trackList, numFeatures, lambda)
 g.minCost
+puts "new theta"
+puts g.theta.to_a.to_s
+puts "new features"
+puts g.features.to_a.to_s
+puts "predictions"
+puts g.predictions.to_a.to_s
