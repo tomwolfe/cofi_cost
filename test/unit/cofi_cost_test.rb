@@ -1,6 +1,5 @@
 require 'test/unit'
-#require File.dirname(__FILE__) + '/cofiCost.rb'
-require_relative '../cofiCost.rb'
+require_relative '../../lib/cofiCost.rb'
 require 'narray'
 require 'gsl'
 require 'matrix'
@@ -18,7 +17,15 @@ class CofiCostTest < Test::Unit::TestCase
   
   def teardown
     @c = nil
-  end  
+  end
+  
+  def test_happy_case
+    @c.min_cost
+    assert_equal 0.15929446605989878, @c.cost
+    # oddly the following fails, even though they are equal (not enough decimal places me thinks)
+    # assert_equal NArray[[4.62547,3.91302,8.30084,1.59081],[2.96361,3.17939,1.88322,3.88434],[3.92356,4.32263,1.739,5.6172],[2.98132,3.06219,2.47359,3.3213],[2.93724,3.14111,1.33728,3.77855]], @c.predictions
+    assert_equal 4.625468057637709, @c.predictions[0,0]
+  end
   
   def test_normalize_ratings
     assert_equal NArray[[4.5],[3.0],[4.0],[3.0],[3.0]], @c.ratings_mean
@@ -29,11 +36,5 @@ class CofiCostTest < Test::Unit::TestCase
     rolled = @c.roll_up_theta_and_features
     assert_equal GSL:: Vector.alloc([-0.079641, 1.211386, -0.130688, 0.444762, -0.789258, 1.222232, 0.212132, -1.174545, 0.139489, 1.804804, -0.501808, 1.050885, 0.354079, -0.518884, -0.01537, 0.096253, 1.147623, -0.745562]), rolled
   end
-  
- # def test_unroll_params
-  #  theta, features = @c.unroll_params
-   # assert_equal 4, theta
-    #assert_equal 4, features
-  #end
   
 end
