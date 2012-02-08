@@ -6,10 +6,10 @@ include GSL::MultiMin
 
 class CofiCost
 
-	attr_accessor :ratings, :num_features, :cost, :lambda
+	attr_accessor :ratings, :num_features, :cost, :lambda, :iterations
 	attr_reader :boolean_rated, :num_tracks, :num_users, :features, :theta, :ratings_mean, :ratings_norm, :predictions
 	
-	def initialize(ratings, num_features, lambda, features = nil, theta = nil)
+	def initialize(ratings, num_features = 2, lambda = 1, iterations = 10, features = nil, theta = nil)
 		@ratings = ratings.to_f	# make sure it's a float for correct normalization
 		@num_features = num_features
 		@cost = 0
@@ -26,6 +26,7 @@ class CofiCost
 		@ratings_mean, @ratings_norm = normalize_ratings
 		@lambda = lambda
 		@predictions = nil
+		@iterations = iterations
 	end
 	
 	def normalize_ratings
@@ -114,7 +115,7 @@ class CofiCost
 			x = minimizer.x
 			f = minimizer.f
 			printf("%5d %.5f %.5f %10.5f\n", iter, x[0], x[1], f)
-		end while status == GSL::CONTINUE and iter < 10
+		end while status == GSL::CONTINUE and iter < @iterations
 		
 		unroll_params_init_shape(x)
 		@cost = f

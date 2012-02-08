@@ -10,9 +10,10 @@ class CofiCostTest < Test::Unit::TestCase
     ratings = NArray[[5.0,4.0,0.0,0.0],[3.0,0.0,0.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
     num_features = 2
     lambda = 1
+    iterations = 10
     features = NArray[[0.139489,1.804804],[-0.501808,1.050885],[0.354079,-0.518884],[-0.015370,0.096253],[1.147623,-0.745562]]
     theta = NArray[[-0.079641,1.211386],[-0.130688,0.444762],[-0.789258,1.222232],[0.212132,-1.174545]]
-    @c = CofiCost.new(ratings, num_features, lambda, features, theta)
+    @c = CofiCost.new(ratings, num_features, lambda, iterations, features, theta)
   end
   
   def teardown

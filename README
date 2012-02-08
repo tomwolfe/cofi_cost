@@ -4,3 +4,38 @@ Playground for collaborative filtering in Ruby using NArray and rb-gsl.
 
 h2. Usage
 
+Create a variable to store the ratings as an NArray (number of users x number of tracks).
+
+Set the number of features to learn, lambda (regularization parameter), and the number of iterations of gradient descent.
+
+Call min_cost
+
+<pre>
+ratings = NArray[[5.0,4.0,0.0,0.0],[3.0,0.0,0.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
+num_features = 2
+lambda = 1
+iterations = 10
+cofi = CofiCost.new(ratings, num_features, lambda, iterations, nil, nil)
+cofi.min_cost
+</pre>
+
+The cost and predictions (an NArray of the original size of ratings) can then be
+returned after running min_cost:
+
+<pre>
+cofi.cost
+cofi.predictions
+</pre>
+
+h2. Installation
+
+h3. gem
+
+rails 3.2
+# gem 'cofi_cost'
+in your Gemfile
+# <pre>bundle install</pre> from the command line
+
+h2. License
+
+MIT License 2012 Thomas Wolfe
