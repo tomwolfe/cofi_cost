@@ -1,5 +1,5 @@
 require 'test/unit'
-require_relative '../../lib/cofiCost.rb'
+require_relative '../../lib/cofi_cost.rb'
 require 'narray'
 require 'gsl'
 require 'matrix'

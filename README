@@ -1,10 +1,6 @@
+h2. About
+
 Playground for collaborative filtering in Ruby using NArray and rb-gsl.
 
-“Snowflakes, like people, are all different and beautiful, 
-but they can be a nuisance when they lose their identity in a mob”
+h2. Usage
 
-Roadmap:
-First release name: Graupel
-Release Date: TBD
-From http://en.wikipedia.org/wiki/Graupel Jan 1, 2012
-"Graupel refers to precipitation that forms when supercooled droplets of water are collected and freeze on a falling snowflake, forming a 2–5 mm (0.079–0.197 in) ball of rime. The term graupel is the German word for this meteorological phenomenon. Graupel is sometimes referred to as small hail, although the World Meteorological Organization defines small hail as snow pellets encapsulated by ice, a precipitation halfway between graupel and hail."
