@@ -6,8 +6,8 @@ include GSL::MultiMin
 
 class CofiCost
 
-	attr_accessor :ratings, :num_features, :cost, :lambda, :iterations
-	attr_reader :boolean_rated, :num_tracks, :num_users, :features, :theta, :ratings_mean, :ratings_norm, :predictions
+	attr_accessor :ratings, :num_features, :cost, :lambda, :iterations, :features, :theta
+	attr_reader :boolean_rated, :num_tracks, :num_users, :ratings_mean, :ratings_norm, :predictions
 	
 	def initialize(ratings, num_features = 2, lambda = 1, iterations = 10, features = nil, theta = nil)
 		@ratings = ratings.to_f	# make sure it's a float for correct normalization
@@ -33,7 +33,12 @@ class CofiCost
 		for i in 0..@num_tracks-1 # sadly, @num_tracks.each_index does not work with NArray yet
 			track_rating = @ratings[true,i] # get all user ratings for track i (including unrated)
 			boolean_track_rating = boolean_rated[true,i] # get all user ratings that exist for track i
-		    	@ratings_mean[i] = track_rating[boolean_track_rating].mean
+		    	track_rating_boolean = track_rating[boolean_track_rating]
+		    	if track_rating_boolean.size == 0
+		    	  @ratings_mean[i] = 0
+		    	else
+		    	  @ratings_mean[i] = track_rating_boolean.mean
+		    	end
 		    	
 		    	track_norm = @ratings_norm[true,i]
 		    	track_norm[boolean_track_rating] = track_rating[boolean_track_rating] - @ratings_mean[i]
@@ -154,10 +159,8 @@ class NArray
 end
 
 ##ratings = NArray.float(4,5).indgen(0,2)
-#ratings = NArray[[5.0,4.0,0.0,0.0],[3.0,0.0,0.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
-#num_features = 2
-#lambda = 1
-#g = CofiCost.new(ratings, num_features, lambda)
+#ratings = NArray[[1.0,4.0],[4.0,0.0],[0.0,0.0]]
+#g = CofiCost.new(ratings, 5, 1, 10, nil, nil)
 #puts g.theta.nil?
 #g.min_cost
 #puts "new theta"
