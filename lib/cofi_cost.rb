@@ -6,10 +6,10 @@ include GSL::MultiMin
 
 class CofiCost
 
-	attr_accessor :ratings, :num_features, :cost, :lambda, :iterations, :features, :theta
+	attr_accessor :ratings, :num_features, :cost, :regularization, :iterations, :features, :theta
 	attr_reader :boolean_rated, :num_tracks, :num_users, :ratings_mean, :ratings_norm, :predictions
 	
-	def initialize(ratings, num_features = 2, lambda = 1, iterations = 10, features = nil, theta = nil)
+	def initialize(ratings, num_features = 2, regularization = 1, iterations = 10, features = nil, theta = nil)
 		@ratings = ratings.to_f	# make sure it's a float for correct normalization
 		@num_features = num_features
 		@cost = 0
@@ -24,7 +24,7 @@ class CofiCost
 		@ratings_mean = NArray.float(1, @num_tracks).fill(0.0)
 		@ratings_norm = NArray.float(@num_users, @num_tracks).fill(0.0)
 		@ratings_mean, @ratings_norm = normalize_ratings
-		@lambda = lambda
+		@regularization = regularization
 		@predictions = nil
 		@iterations = iterations
 	end
@@ -32,7 +32,7 @@ class CofiCost
 	def normalize_ratings
 		for i in 0..@num_tracks-1 # sadly, @num_tracks.each_index does not work with NArray yet
 			track_rating = @ratings[true,i] # get all user ratings for track i (including unrated)
-			boolean_track_rating = boolean_rated[true,i] # get all user ratings that exist for track i
+			boolean_track_rating = @boolean_rated[true,i] # get all user ratings that exist for track i
 		    	track_rating_boolean = track_rating[boolean_track_rating]
 		    	if track_rating_boolean.size == 0
 		    	  @ratings_mean[i] = 0
@@ -54,21 +54,15 @@ class CofiCost
 		return theta, features
 	end
 	
-	def partial_cost_calc(theta,features)
+	def partial_cost_calc(theta=@theta,features=@features)
 		(NArray.ref(NMatrix.ref(features) * NMatrix.ref(theta.transpose(1,0))) - @ratings_norm) * @boolean_rated
 	end
 	
 	def roll_up_theta_and_features
-		# roll up theta and features together
-		# (oddly, NArray objects created don't seem to recognize the hcat method
-		# 	added to the open class NArray
-		#	x = GSL:: Vector.alloc(@theta.reshape(true).hcat(@features.reshape(true)))
-		#		will fail)
-		#		I don't understand why this is/how to fix it.
 		theta_reshaped = @theta.reshape(true)
 		features_reshaped = @features.reshape(true)
 		rolled = NArray.hcat(theta_reshaped,features_reshaped)
-		GSL:: Vector.alloc(rolled) # starting point
+		GSL::Vector.alloc(rolled) # starting point
 	end
 	
 	def unroll_params_init_shape(x)
@@ -79,22 +73,22 @@ class CofiCost
 	
 	def min_cost
 		cost_f = Proc.new { |v|
-			theta, features = unroll_params(v)
+			theta_l, features_l = unroll_params(v)
 			# In octave:
-			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + lambda/2 * sum(sum((Theta).^2)) + lambda/2 * sum(sum((X).^2))
-			(partial_cost_calc(theta,features)**2).sum + @lambda/2 * (features**2).sum
+			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + regularization/2 * sum(sum((Theta).^2)) + regularization/2 * sum(sum((X).^2))
+			0.5 * (partial_cost_calc(theta_l,features_l)**2).sum + @regularization/2 * (features_l**2).sum
 		}
 		cost_df = Proc.new { |v, df|
-			theta, features = unroll_params(v)
+			theta_l, features_l = unroll_params(v)
 			# In octave:
-			# xgrad = ((X * Theta.transpose - Y).* R) * Theta + lambda * X # X_grad
-			# thetagrad = ((X * Theta.transpose - Y).* R).transpose * X + lambda * Theta
+			# xgrad = ((X * Theta.transpose - Y).* R) * Theta + regularization * X # X_grad
+			# thetagrad = ((X * Theta.transpose - Y).* R).transpose * X + regularization * Theta
 			
 			# I realize this is a hack. I'm not totally sure why or how but just setting
-			# df = NArray.hcat(dfzero,dfone) results in no steps being made in gradient descent.
+			# df = NArray.hcat(dfzero,dfone).to_gv results in no steps being made in gradient descent.
 			# ideas/suggestions welcome :)
-			dfzero = (NArray.ref(NMatrix.ref(partial_cost_calc(theta,features)) * NMatrix.ref(theta)) + @lambda * features).flatten
-			dfone = (NArray.ref(NMatrix.ref((partial_cost_calc(theta,features)).transpose(1,0)) * NMatrix.ref(features)) + @lambda * theta).flatten
+			dfzero = (NArray.ref(NMatrix.ref(partial_cost_calc(theta_l,features_l)) * NMatrix.ref(theta_l)) + @regularization * features_l).flatten
+			dfone = (NArray.ref(NMatrix.ref((partial_cost_calc(theta_l,features_l)).transpose(1,0)) * NMatrix.ref(features_l)) + @regularization * theta_l).flatten
 			dfcomp = NArray.hcat(dfzero,dfone)
 			for i in 0..dfcomp.size-1	# again .each_index does not yet work with NArray
 				df[i] = dfcomp[i]
@@ -157,15 +151,3 @@ class NArray
 		def hcat(*narrays) ; cat(0, *narrays) end
 	end
 end
-
-##ratings = NArray.float(4,5).indgen(0,2)
-#ratings = NArray[[1.0,4.0],[4.0,0.0],[0.0,0.0]]
-#g = CofiCost.new(ratings, 5, 1, 10, nil, nil)
-#puts g.theta.nil?
-#g.min_cost
-#puts "new theta"
-#puts g.theta.to_a.to_s
-#puts "new features"
-#puts g.features.to_a.to_s
-#puts "predictions"
-#puts g.predictions.to_a.to_s

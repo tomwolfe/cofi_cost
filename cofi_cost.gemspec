@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'cofi_cost'
-  s.version     = '0.0.4'
+  s.version     = '0.0.6'
   s.date        = '2012-09-02'
   s.summary     = "Collaborative filtering"
   s.description = "Playground for collaborative filtering in Ruby using NArray and rb-gsl."

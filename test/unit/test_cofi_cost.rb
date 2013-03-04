@@ -22,7 +22,7 @@ class CofiCostTest < Test::Unit::TestCase
   
   def test_happy_case
     @c.min_cost
-    assert_equal 0.15929446605989878, @c.cost
+    assert_equal 0.07964723302994943, @c.cost
     # oddly the following fails, even though they are equal (not enough decimal places me thinks)
     # assert_equal NArray[[4.62547,3.91302,8.30084,1.59081],[2.96361,3.17939,1.88322,3.88434],[3.92356,4.32263,1.739,5.6172],[2.98132,3.06219,2.47359,3.3213],[2.93724,3.14111,1.33728,3.77855]], @c.predictions
     assert_equal 4.625468057637709, @c.predictions[0,0]
