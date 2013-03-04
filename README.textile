@@ -36,6 +36,9 @@ rails 3.2
 in your Gemfile
 # <pre>bundle install</pre> from the command line
 
+h2. Thank you
+Professor Andrew Ng for his wonderful Machine Learning class: ml-class.org
+
 h2. License
 
 MIT License 2012 Thomas Wolfe
