@@ -4,7 +4,7 @@ describe CofiCost do
 	before :each do
 		ratings = NArray[[5.0,4.0,0.0,0.0],[3.0,0.0,0.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
 		num_features = 3
-		regularization = 10
+		regularization = 1
 		iterations = 10
 		theta = NArray[[0.28544,-1.68427,0.26294],[0.50501,-0.45465,0.31746],[-0.43192,-0.47880,0.84671],[0.72860,-0.27189,0.32684]]
 		features = NArray[[1.048686,-0.400232,1.194119],[0.780851,-0.385626,0.521198],[0.641509,-0.547854,-0.083796],[0.453618,-0.800218,0.680481],[0.937538,0.106090,0.361953]]
@@ -46,7 +46,7 @@ describe CofiCost do
 	describe "#min_cost" do
 		it "finds the lowest cost" do
 			@cofi.min_cost
-			@cofi.cost.should == 19.769293579087275
+			@cofi.cost.should == 0.9885618408659723
 		end
 		it "calls #calc_predictions" do
 			@cofi.should_receive(:calc_predictions)

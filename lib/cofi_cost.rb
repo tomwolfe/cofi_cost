@@ -76,7 +76,7 @@ class CofiCost
 			theta_l, features_l = unroll_params(v)
 			# In octave:
 			# 1/2 * sum(sum(((X * Theta.transpose - Y).*R).^2)) + regularization/2 * sum(sum((Theta).^2)) + regularization/2 * sum(sum((X).^2))
-			0.5 * (partial_cost_calc(theta_l,features_l)**2).sum + @regularization/2 * (features_l**2).sum
+			0.5 * (partial_cost_calc(theta_l,features_l)**2).sum + @regularization/2 * (features_l**2).sum + @regularization/2 * (theta_l**2).sum
 		}
 		cost_df = Proc.new { |v, df|
 			theta_l, features_l = unroll_params(v)
