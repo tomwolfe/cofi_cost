@@ -7,9 +7,10 @@ describe CofiCost do
 		regularization = 1
 		iterations = 10
 		max_rating = 5
+		min_rating = 0
 		theta = NArray[[0.28544,-1.68427,0.26294],[0.50501,-0.45465,0.31746],[-0.43192,-0.47880,0.84671],[0.72860,-0.27189,0.32684]]
 		features = NArray[[1.048686,-0.400232,1.194119],[0.780851,-0.385626,0.521198],[0.641509,-0.547854,-0.083796],[0.453618,-0.800218,0.680481],[0.937538,0.106090,0.361953]]
-		@cofi = CofiCost.new(ratings, num_features, regularization, iterations, max_rating, features, theta)
+		@cofi = CofiCost.new(ratings, num_features, regularization, iterations, max_rating, min_rating, features, theta)
 	end
   
 	describe "#normalize_ratings" do
@@ -68,10 +69,10 @@ describe CofiCost do
 		end
 	end
 
-	describe "#set_max_predictions(predicts)" do
-		it "does not allow any prediction greater than self.max_rating" do
-			test = NArray[[6.0,4.0,0.0,0.0],[3.0,0.0,6.5,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
-			@cofi.set_max_predictions(test).to_a.should == [[5.0,4.0,0.0,0.0],[3.0,0.0,5.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
+	describe "#set_max_min_predictions(predicts)" do
+		it "does not allow any prediction greater than self.max_rating or less than self.min_rating" do
+			test = NArray[[6.0,4.0,-1.0,0.0],[3.0,0.0,6.5,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
+			@cofi.set_max_min_predictions(test).to_a.should == [[5.0,4.0,0.0,0.0],[3.0,0.0,5.0,0.0],[4.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0],[3.0,0.0,0.0,0.0]]
 		end
 	end
 end

@@ -6,14 +6,15 @@ include GSL::MultiMin
 
 class CofiCost
 
-	attr_accessor :ratings, :num_features, :regularization, :iterations, :features, :theta, :max_rating
+	attr_accessor :ratings, :num_features, :regularization, :iterations, :features, :theta, :max_rating, :min_rating
 	attr_reader :boolean_rated, :num_tracks, :num_users, :ratings_mean, :ratings_norm, :predictions, :cost
 	
-	def initialize(ratings, num_features = 2, regularization = 1, iterations = 10, max_rating = 5, features = nil, theta = nil)
+	def initialize(ratings, num_features = 2, regularization = 1, iterations = 10, max_rating = 5, min_rating = 0, features = nil, theta = nil)
 		@ratings = ratings.to_f	# make sure it's a float for correct normalization
 		@num_features = num_features
 		@cost = 0
 		@max_rating = max_rating
+		@min_rating = min_rating
 		@boolean_rated = @ratings > 0 # return 0 for all rated and 1 for all unrated
 		@boolean_unrated = @boolean_rated.eq 0 # return 1 for all unrated and 0 for all unrated
 		@num_tracks = @ratings.shape[1] # @ratings is users x tracks
@@ -124,12 +125,14 @@ class CofiCost
 	
 	def calc_predictions
 		predicts = NArray.ref(NMatrix.ref(@features) * NMatrix.ref(@theta.transpose(1,0))) + @ratings_mean
-		set_max_predictions(predicts)
+		set_max_min_predictions(predicts)
 	end
 
-	def set_max_predictions(predicts)
-		a = predicts > @max_rating
-		predicts[a] = @max_rating
+	def set_max_min_predictions(predicts)
+		over_max = predicts > @max_rating
+		under_min = predicts < @min_rating
+		predicts[over_max] = @max_rating
+		predicts[under_min] = @min_rating
 		predicts
 	end
 
