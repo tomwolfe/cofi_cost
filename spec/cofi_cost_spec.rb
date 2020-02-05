@@ -23,7 +23,7 @@ describe CofiCost do
 
 	describe "#partial_cost_calc(theta,features)" do
 		it "calculates part of the cost" do
-			@cofi.partial_cost_calc.to_a.should == [[0.78741733234,1.5906474134,0.0,0.0],[1.00942821458,0.0,0.0,0.0],[1.0838130652999998,0.0,-0.0,0.0],[1.65618956692,0.0,0.0,0.0],[0.18409856424000004,0.0,-0.0,0.0]]
+			@cofi.partial_cost_calc.to_a.should == [[0.78741733234, 1.5906474134, 0.0, 0.0], [1.00942821458, 0.0, 0.0, 0.0], [1.0838130652999998, 0.0, -0.0, 0.0], [1.65618956692, 0.0, 0.0, 0.0], [0.18409856424, 0.0, -0.0, 0.0]]
 		end
 	end
 
@@ -48,7 +48,7 @@ describe CofiCost do
 	describe "#min_cost" do
 		it "finds the lowest cost" do
 			@cofi.min_cost
-			@cofi.cost.should == 0.9885618408659724
+			@cofi.cost.should == 0.9885618408659723
 		end
 		it "calls #calc_predictions" do
 			@cofi.should_receive(:calc_predictions)
@@ -58,7 +58,7 @@ describe CofiCost do
 
 	describe "#calc_predictions" do
 		it "calculates predictions" do
-			@cofi.calc_predictions.to_a.should == [[5.0, 5.0, 5.0, 5.0], [4.00942821458, 3.73512194149, 3.28867612346, 3.84412424606], [5.0, 4.54644840303, 3.91428101676, 4.58897159682], [4.65618956692, 3.80892623814, 3.76338775935, 3.7704857568600003], [3.18409856424, 3.54013784626, 2.85073191967, 3.77254609522]]
+			@cofi.calc_predictions.to_a.should == [[5.0, 5.0, 5.0, 5.0], [4.00942821458, 3.73512194149, 3.28867612346, 3.84412424606], [5.0, 4.54644840303, 3.91428101676, 4.58897159682], [4.65618956692, 3.8089262381399998, 3.76338775935, 3.7704857568600003], [3.18409856424, 3.54013784626, 2.85073191967, 3.77254609522]]
 		end
 	end
 

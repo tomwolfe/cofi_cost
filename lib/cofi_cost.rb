@@ -50,7 +50,7 @@ class CofiCost
 	end
 	
 	def unroll_params(v)
-		v = v.to_na
+		v = NArray.to_na(v.to_a)
 		theta = v.slice(0..@theta.size-1).reshape(@theta.shape[0],true)
 		features = v.slice(@theta.size..-1).reshape(@features.shape[0],true)
 		return theta, features
@@ -64,7 +64,7 @@ class CofiCost
 		theta_reshaped = @theta.reshape(true)
 		features_reshaped = @features.reshape(true)
 		rolled = NArray.hcat(theta_reshaped,features_reshaped)
-		GSL::Vector.alloc(rolled) # starting point
+		GSL::Vector.alloc(rolled.to_a) # starting point
 	end
 	
 	def unroll_params_init_shape(x)

@@ -1,27 +1,21 @@
 PATH
   remote: .
   specs:
-    cofi_cost (0.0.8)
+    cofi_cost (0.0.9)
       gsl
       narray
 
 GEM
   remote: https://rubygems.org/
   specs:
-    columnize (0.3.6)
-    debugger (1.6.2)
-      columnize (>= 0.3.1)
-      debugger-linecache (~> 1.2.0)
-      debugger-ruby_core_source (~> 1.2.3)
-    debugger-linecache (1.2.0)
-    debugger-ruby_core_source (1.2.3)
-    gsl (1.15.3)
-      narray (>= 0.5.9)
-    narray (0.6.0.8)
+    gsl (2.1.0.3)
+    narray (0.6.1.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   cofi_cost!
-  debugger
+
+BUNDLED WITH
+   1.17.2
