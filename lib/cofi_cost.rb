@@ -91,9 +91,9 @@ class CofiCost
 			# ideas/suggestions welcome :)
 			dfzero = (NArray.ref(NMatrix.ref(partial_cost_calc(theta_l,features_l)) * NMatrix.ref(theta_l)) + @regularization * features_l).flatten
 			dfone = (NArray.ref(NMatrix.ref((partial_cost_calc(theta_l,features_l)).transpose(1,0)) * NMatrix.ref(features_l)) + @regularization * theta_l).flatten
-			dfcomp = NArray.hcat(dfzero,dfone)
-			for i in 0..dfcomp.size-1	# again .each_index does not yet work with NArray
-				df[i] = dfcomp[i]
+			dfcomp = NArray.hcat(dfzero,dfone).to_a
+			dfcomp.each_with_index do |item, index|
+				df[index] = dfcomp[index]
 			end
 		}
 		
